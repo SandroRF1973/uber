@@ -8,8 +8,17 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final TextEditingController? _controllerEmail = TextEditingController();
+  final TextEditingController? _controllerSenha = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(image: DecorationImage(
+              image: AssetImage("imagens/fundo.png"),
+              fit: BoxFit.cover),
+      ),
+    );
   }
 }
