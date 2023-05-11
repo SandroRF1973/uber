@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "306869249271",
+    "project_id": "whatsapp-projeto-64d68",
+    "storage_bucket": "whatsapp-projeto-64d68.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:306869249271:android:81057787172917da7f5ff2",
+        "android_client_info": {
+          "package_name": "com.example.uber"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "306869249271-tvi5jp4ebj4ms5dm7h2bk33l0fv1sjhb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCICeagIG3TvTySc94GdU5bdYGWJWHxQ7U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "306869249271-tvi5jp4ebj4ms5dm7h2bk33l0fv1sjhb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
