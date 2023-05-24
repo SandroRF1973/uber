@@ -1,130 +1,110 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uber/model/usuario.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Home extends StatefulWidget {
-  const Home({super.key});
+class Cadastro extends StatefulWidget {
+  const Cadastro({super.key});
 
   @override
-  State<Home> createState() => _HomeState();
+  State<Cadastro> createState() => _CadastroState();
 }
 
-class _HomeState extends State<Home> {
+class _CadastroState extends State<Cadastro> {
+  final TextEditingController _controllerNome = TextEditingController();
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerSenha = TextEditingController();
+  bool _tipoUsuario = false;
   String _mensagemErro = "";
-  bool _carregando = false;
 
   _validarCampos() {
+    String nome = _controllerNome.text;
     String email = _controllerEmail.text;
     String senha = _controllerSenha.text;
 
-    if (email.isNotEmpty && email.contains("@")) {
-      if (senha.isNotEmpty && senha.length > 6) {
-        Usuario usuario = Usuario();
-        usuario.email = email;
-        usuario.senha = senha;
+    if (nome.isNotEmpty) {
+      if (email.isNotEmpty && email.contains("@")) {
+        if (senha.isNotEmpty && senha.length > 6) {
+          Usuario usuario = Usuario();
+          usuario.nome = nome;
+          usuario.email = email;
+          usuario.senha = senha;
+          usuario.tipoUsuario = usuario.verificaTipoUsuario(_tipoUsuario);
 
-        _logarUsuario(usuario);
+          _cadastrarUsuario(usuario);
+        } else {
+          setState(() {
+            _mensagemErro = "Preencha a senha! digite mais de 6 caracteres";
+          });
+        }
       } else {
         setState(() {
-          _mensagemErro = "Preencha a senha! digite mais de 6 caracteres";
+          _mensagemErro = "Preencha o E-mail válido";
         });
       }
     } else {
       setState(() {
-        _mensagemErro = "Preencha o E-mail válido";
+        _mensagemErro = "Preencha o nome";
       });
     }
   }
 
-  _logarUsuario(Usuario usuario) {
-    setState(() {
-      _carregando = true;
-    });
-
+  _cadastrarUsuario(Usuario usuario) {
     FirebaseAuth auth = FirebaseAuth.instance;
-
-    auth
-        .signInWithEmailAndPassword(
-            email: usuario.email, password: usuario.senha)
-        .then((firebaseUser) {
-      _redirecionaPainelPorTipoUsuario(firebaseUser.user!.uid);
-    }).catchError((error) {
-      _mensagemErro =
-          "Erro ao autenticar usuário, verifique e-mail e senha e tente novamente!";
-    });
-  }
-
-  _redirecionaPainelPorTipoUsuario(String idUsuario) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
 
-    DocumentSnapshot snapshot =
-        await db.collection("usuarios").doc(idUsuario).get();
+    auth
+        .createUserWithEmailAndPassword(
+            email: usuario.email, password: usuario.senha)
+        .then((firebaseUser) {
+      db
+          .collection("usuarios")
+          .doc(firebaseUser.user?.uid)
+          .set(usuario.toMap());
 
-    final dados = snapshot.data() as Map<String, dynamic>;
-    String tipoUsuario = dados["tipoUsuario"];
-
-    setState(() {
-      _carregando = false;
+      switch (usuario.tipoUsuario) {
+        case "motorista":
+          Navigator.pushNamedAndRemoveUntil(
+              context, "/painel-motorista", (_) => false);
+          break;
+        case "passageiro":
+          Navigator.pushNamedAndRemoveUntil(
+              context, "/painel-passageiro", (_) => false);
+          break;
+      }
+    }).catchError((error) {
+      _mensagemErro = "Erro ao autenticar usuário, verifique e-mail e senha!";
     });
-
-    switch (tipoUsuario) {
-      case "motorista":
-        // ignore: use_build_context_synchronously
-        Navigator.pushReplacementNamed(context, "/painel-motorista");
-        break;
-      case "passageiro":
-        // ignore: use_build_context_synchronously
-        Navigator.pushReplacementNamed(context, "/painel-passageiro");
-        break;
-    }
-  }
-
-  _verificarUsuarioLogado() async {
-    FirebaseAuth auth = FirebaseAuth.instance;
-
-    final usuarioLogado = auth.currentUser;
-
-    if (usuarioLogado != null) {
-      String idUsuario = usuarioLogado.uid;
-      _redirecionaPainelPorTipoUsuario(idUsuario);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _verificarUsuarioLogado();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Cadastro"),
+      ),
       body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-              image: AssetImage("imagens/fundo.png"), fit: BoxFit.cover),
-        ),
         padding: const EdgeInsets.all(16),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: Image.asset(
-                    "imagens/logo.png",
-                    width: 200,
-                    height: 150,
-                  ),
+                TextField(
+                  controller: _controllerNome,
+                  autofocus: true,
+                  keyboardType: TextInputType.text,
+                  style: const TextStyle(fontSize: 20),
+                  decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
+                      hintText: "Nome completo",
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6))),
                 ),
                 TextField(
                   controller: _controllerEmail,
-                  autofocus: true,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(fontSize: 20),
                   decoration: InputDecoration(
@@ -149,6 +129,22 @@ class _HomeState extends State<Home> {
                           borderRadius: BorderRadius.circular(6))),
                 ),
                 Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      const Text("Passageiro"),
+                      Switch(
+                          value: _tipoUsuario,
+                          onChanged: (bool valor) {
+                            setState(() {
+                              _tipoUsuario = valor;
+                            });
+                          }),
+                      const Text("Motorista")
+                    ],
+                  ),
+                ),
+                Padding(
                   padding: const EdgeInsets.only(top: 16, bottom: 10),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -158,29 +154,11 @@ class _HomeState extends State<Home> {
                       _validarCampos();
                     },
                     child: const Text(
-                      "Entrar",
+                      "Cadastrar",
                       style: TextStyle(color: Colors.white, fontSize: 20),
                     ),
                   ),
                 ),
-                Center(
-                  child: GestureDetector(
-                    child: const Text(
-                      "Não tem conta? cadastre-se!",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    onTap: () {
-                      Navigator.pushNamed(context, "/cadastro");
-                    },
-                  ),
-                ),
-                _carregando
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          backgroundColor: Colors.white,
-                        ),
-                      )
-                    : Container(),
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
                   child: Center(
