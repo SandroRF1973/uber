@@ -19,6 +19,8 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
   CameraPosition _posicaoCamera =
       const CameraPosition(target: LatLng(-23.563999, -46.653256));
 
+  final Set<Marker> _marcadores = {};
+
   _deslogarUsuario() async {
     FirebaseAuth auth = FirebaseAuth.instance;
 
@@ -48,6 +50,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
     Geolocator.getPositionStream(locationSettings: locationOptions)
         .listen((Position position) {
+      _exibirMarcadorPassageiro(position);
       _posicaoCamera = CameraPosition(
           target: LatLng(position.latitude, position.longitude), zoom: 19);
 
@@ -67,6 +70,8 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
     setState(() {
       if (position != null) {
+        _exibirMarcadorPassageiro(position);
+
         _posicaoCamera = CameraPosition(
             target: LatLng(position.latitude, position.longitude), zoom: 19);
 
@@ -79,6 +84,25 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     GoogleMapController googleMapController = await _controller.future;
     googleMapController
         .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+  }
+
+  _exibirMarcadorPassageiro(Position local) async {
+    double pixelRatio = MediaQuery.of(context).devicePixelRatio;
+
+    BitmapDescriptor.fromAssetImage(
+            ImageConfiguration(devicePixelRatio: pixelRatio),
+            "imagens/passageiro.png")
+        .then((BitmapDescriptor icone) {
+      Marker marcadorPassageiro = Marker(
+          markerId: const MarkerId("marcador-passageiro"),
+          position: LatLng(local.latitude, local.longitude),
+          infoWindow: const InfoWindow(title: "Meu local"),
+          icon: icone);
+
+      setState(() {
+        _marcadores.add(marcadorPassageiro);
+      });
+    });
   }
 
   @override
@@ -113,8 +137,9 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
             mapType: MapType.normal,
             initialCameraPosition: _posicaoCamera,
             onMapCreated: _onMapCreated,
-            myLocationEnabled: true,
+            // myLocationEnabled: true,
             myLocationButtonEnabled: false,
+            markers: _marcadores,
           ),
           Positioned(
             top: 0,
