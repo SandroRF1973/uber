@@ -4,6 +4,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'dart:io';
+import 'package:uber/model/destino.dart';
+import 'package:geocoding/geocoding.dart';
 
 class PainelPassageiro extends StatefulWidget {
   const PainelPassageiro({super.key});
@@ -13,6 +15,8 @@ class PainelPassageiro extends StatefulWidget {
 }
 
 class _PainelPassageiroState extends State<PainelPassageiro> {
+  final TextEditingController _controllerDestino = TextEditingController();
+
   List<String> itensMenu = ["Configurações", "Deslogar"];
 
   final Completer<GoogleMapController> _controller = Completer();
@@ -105,6 +109,70 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     });
   }
 
+  _chamarUber() async {
+    String enderecoDestino = _controllerDestino.text;
+
+    if (enderecoDestino.isNotEmpty) {
+      List<Location> listaEnderecos =
+          await locationFromAddress(enderecoDestino);
+
+      if (listaEnderecos.isNotEmpty) {
+        Location endereco = listaEnderecos[0];
+
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+            endereco.latitude, endereco.longitude);
+
+        Destino destino = Destino();
+        destino.cidade = placemarks[0].administrativeArea!;
+        destino.cep = placemarks[0].postalCode!;
+        destino.bairro = placemarks[0].subLocality!;
+        destino.rua = placemarks[0].thoroughfare!;
+        destino.numero = placemarks[0].subThoroughfare!;
+
+        destino.latitude = endereco.latitude;
+        destino.longitude = endereco.longitude;
+
+        String enderecoConfirmacao;
+        enderecoConfirmacao = "\n Cidade: ${destino.cidade}";
+        enderecoConfirmacao += "\n Rua: ${destino.rua}, ${destino.numero}";
+        enderecoConfirmacao += "\n Bairro: ${destino.bairro}";
+        enderecoConfirmacao += "\n Cep: ${destino.cep}";
+
+        // ignore: use_build_context_synchronously
+        showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text("Confirmação do endereço"),
+                content: Text(enderecoConfirmacao),
+                contentPadding: const EdgeInsets.all(16),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text(
+                      "Cancelar",
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  TextButton(
+                    child: const Text(
+                      "Confirmar",
+                      style: TextStyle(color: Colors.green),
+                    ),
+                    onPressed: () {
+                      //salvar requisicao
+                      //_salvarRequisicao();
+
+                      Navigator.pop(context);
+                    },
+                  )
+                ],
+              );
+            });
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -189,6 +257,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
                     borderRadius: BorderRadius.circular(3),
                     color: Colors.white),
                 child: TextField(
+                  controller: _controllerDestino,
                   decoration: InputDecoration(
                       // ignore: sized_box_for_whitespace
                       icon: Container(
@@ -221,7 +290,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
                       backgroundColor: const Color(0xff1ebbd8),
                       padding: const EdgeInsets.fromLTRB(32, 16, 32, 16)),
                   onPressed: () {
-                    //_validarCampos();
+                    _chamarUber();
                   },
                   child: const Text(
                     "Chamar Uber",
