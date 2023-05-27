@@ -31,6 +31,11 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
   final Set<Marker> _marcadores = {};
 
+  bool _exibirCaixaEnderecoDestino = true;
+  String _textoBotao = "Chamar uber";
+  Color _corBotao = const Color(0xff1ebbd8);
+  Function _funcaoBotao = () {};
+
   _deslogarUsuario() async {
     FirebaseAuth auth = FirebaseAuth.instance;
 
@@ -203,11 +208,28 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     db.collection("requisicoes").add(requisicao.toMap());
   }
 
+  _alterarBotaoPrincipal(String texto, Color cor, Function funcao) {
+    setState(() {
+      _textoBotao = texto;
+      _corBotao = cor;
+      _funcaoBotao = funcao;
+    });
+  }
+
+  _statusUberNaoChamado() {
+    _exibirCaixaEnderecoDestino = true;
+
+    _alterarBotaoPrincipal("Chamar uber", const Color(0xff1ebbd8), () {
+      _chamarUber();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _recuperarUltimaLocalizacaoConhecida();
     _adicionarListenerLocalizacao();
+    _statusUberNaoChamado();
   }
 
   @override
@@ -239,74 +261,82 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
             myLocationButtonEnabled: false,
             markers: _marcadores,
           ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Container(
-                height: 50,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(3),
-                    color: Colors.white),
-                child: TextField(
-                  readOnly: true,
-                  decoration: InputDecoration(
-                      // ignore: sized_box_for_whitespace
-                      icon: Container(
-                        margin: const EdgeInsets.only(left: 20, bottom: 10),
-                        width: 10,
-                        height: 10,
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.green,
+          Visibility(
+              visible: _exibirCaixaEnderecoDestino,
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Container(
+                        height: 50,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(3),
+                            color: Colors.white),
+                        child: TextField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                              // ignore: sized_box_for_whitespace
+                              icon: Container(
+                                margin:
+                                    const EdgeInsets.only(left: 20, bottom: 10),
+                                width: 10,
+                                height: 10,
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              hintText: "Meu local",
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.only(
+                                  left: 15, top: 16, bottom: 10)),
                         ),
                       ),
-                      hintText: "Meu local",
-                      border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.only(left: 15, top: 16, bottom: 10)),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 55,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Container(
-                height: 50,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(3),
-                    color: Colors.white),
-                child: TextField(
-                  controller: _controllerDestino,
-                  decoration: InputDecoration(
-                      // ignore: sized_box_for_whitespace
-                      icon: Container(
-                        margin: const EdgeInsets.only(left: 20, bottom: 10),
-                        width: 10,
-                        height: 10,
-                        child: const Icon(
-                          Icons.local_taxi,
-                          color: Colors.black,
+                    ),
+                  ),
+                  Positioned(
+                    top: 55,
+                    left: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Container(
+                        height: 50,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(3),
+                            color: Colors.white),
+                        child: TextField(
+                          controller: _controllerDestino,
+                          decoration: InputDecoration(
+                              // ignore: sized_box_for_whitespace
+                              icon: Container(
+                                margin:
+                                    const EdgeInsets.only(left: 20, bottom: 10),
+                                width: 10,
+                                height: 10,
+                                child: const Icon(
+                                  Icons.local_taxi,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              hintText: "Digite o destino",
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.only(
+                                  left: 15, top: 16, bottom: 10)),
                         ),
                       ),
-                      hintText: "Digite o destino",
-                      border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.only(left: 15, top: 16, bottom: 10)),
-                ),
-              ),
-            ),
-          ),
+                    ),
+                  ),
+                ],
+              )),
           Positioned(
               right: 0,
               left: 0,
@@ -317,14 +347,14 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
                     : const EdgeInsets.all(10),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xff1ebbd8),
+                      backgroundColor: _corBotao,
                       padding: const EdgeInsets.fromLTRB(32, 16, 32, 16)),
                   onPressed: () {
-                    _chamarUber();
+                    _funcaoBotao;
                   },
-                  child: const Text(
-                    "Chamar Uber",
-                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  child: Text(
+                    _textoBotao,
+                    style: const TextStyle(color: Colors.white, fontSize: 20),
                   ),
                 ),
               ))
