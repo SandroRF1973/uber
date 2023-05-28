@@ -10,7 +10,6 @@ import 'package:geocoding/geocoding.dart';
 import 'package:uber/model/requisicao.dart';
 import 'package:uber/model/usuario.dart';
 import 'package:uber/util/status_requisicao.dart';
-
 import '../util/usuario_firebase.dart';
 
 class PainelPassageiro extends StatefulWidget {
@@ -205,9 +204,18 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
     FirebaseFirestore db = FirebaseFirestore.instance;
 
-    db.collection("requisicoes").add(requisicao.toMap());
+    db.collection("requisicoes").doc(requisicao.id).set(requisicao.toMap());
 
-    _statusAguardando();
+    //Salvar requisição ativa
+    Map<String, dynamic> dadosRequisicaoAtiva = {};
+    dadosRequisicaoAtiva["id_requisicao"] = requisicao.id;
+    dadosRequisicaoAtiva["id_usuario"] = passageiro.idUsuario;
+    dadosRequisicaoAtiva["status"] = StatusRequisicao.AGUARDANDO;
+
+    db
+        .collection("requisicao_ativa")
+        .doc(passageiro.idUsuario)
+        .set(dadosRequisicaoAtiva);
   }
 
   _alterarBotaoPrincipal(String texto, Color cor, Function funcao) {
@@ -232,12 +240,45 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
   _cancelarUber() {}
 
+  _adicionarListenerRequisicaoAtiva() async {
+    final firebaseUser = await UsuarioFirebase.getUsuarioAtual();
+
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    // ignore: await_only_futures
+    await db
+        .collection("requisicao_ativa")
+        .doc(firebaseUser.uid)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists) {
+        Map<String, dynamic>? dados =
+            (snapshot.exists) ? snapshot.data() : null;
+        String status = dados!["status"];
+        String idRequisicao = dados["id_requisicao"];
+
+        switch (status) {
+          case StatusRequisicao.AGUARDANDO:
+            _statusAguardando();
+            break;
+          case StatusRequisicao.A_CAMINHO:
+            break;
+          case StatusRequisicao.VIAGEM:
+            break;
+          case StatusRequisicao.FINALIZADA:
+            break;
+        }
+      } else {
+        _statusUberNaoChamado();
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _recuperarUltimaLocalizacaoConhecida();
     _adicionarListenerLocalizacao();
-    _statusUberNaoChamado();
+    _adicionarListenerRequisicaoAtiva();
   }
 
   @override

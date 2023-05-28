@@ -1,8 +1,8 @@
-// ignore_for_file: prefer_const_declarations, non_constant_identifier_names
+// ignore_for_file: prefer_const_declarations, non_constant_identifier_names, constant_identifier_names
 
 class StatusRequisicao {
-  static final String AGUARDANDO = "aguardando";
-  static final String A_CAMINHO = "a_caminho";
-  static final String VIAGEM = "viagem";
-  static final String FINALIZADA = "finalizada";
+  static const String AGUARDANDO = "aguardando";
+  static const String A_CAMINHO = "a_caminho";
+  static const String VIAGEM = "viagem";
+  static const String FINALIZADA = "finalizada";
 }
