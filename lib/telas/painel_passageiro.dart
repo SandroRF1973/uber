@@ -34,7 +34,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
   bool _exibirCaixaEnderecoDestino = true;
   String _textoBotao = "Chamar uber";
   Color _corBotao = const Color(0xff1ebbd8);
-  Function _funcaoBotao = () {};
+  late Function _funcaoBotao;
 
   _deslogarUsuario() async {
     FirebaseAuth auth = FirebaseAuth.instance;
@@ -206,6 +206,8 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     FirebaseFirestore db = FirebaseFirestore.instance;
 
     db.collection("requisicoes").add(requisicao.toMap());
+
+    _statusAguardando();
   }
 
   _alterarBotaoPrincipal(String texto, Color cor, Function funcao) {
@@ -219,10 +221,16 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
   _statusUberNaoChamado() {
     _exibirCaixaEnderecoDestino = true;
 
-    _alterarBotaoPrincipal("Chamar uber", const Color(0xff1ebbd8), () {
-      _chamarUber();
-    });
+    _alterarBotaoPrincipal("Chamar uber", const Color(0xff1ebbd8), _chamarUber);
   }
+
+  _statusAguardando() {
+    _exibirCaixaEnderecoDestino = false;
+
+    _alterarBotaoPrincipal("Cancelar", Colors.red, _cancelarUber);
+  }
+
+  _cancelarUber() {}
 
   @override
   void initState() {
@@ -350,7 +358,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
                       backgroundColor: _corBotao,
                       padding: const EdgeInsets.fromLTRB(32, 16, 32, 16)),
                   onPressed: () {
-                    _funcaoBotao;
+                    _funcaoBotao();
                   },
                   child: Text(
                     _textoBotao,
