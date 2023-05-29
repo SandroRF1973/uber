@@ -322,6 +322,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
             onMapCreated: _onMapCreated,
             // myLocationEnabled: true,
             myLocationButtonEnabled: false,
+            zoomGesturesEnabled: false,
             markers: _marcadores,
           ),
           Visibility(
