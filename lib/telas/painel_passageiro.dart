@@ -30,6 +30,8 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
   final Set<Marker> _marcadores = {};
 
+  String? _idRequisicao;
+
   bool _exibirCaixaEnderecoDestino = true;
   String _textoBotao = "Chamar uber";
   Color _corBotao = const Color(0xff1ebbd8);
@@ -238,7 +240,19 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     _alterarBotaoPrincipal("Cancelar", Colors.red, _cancelarUber);
   }
 
-  _cancelarUber() {}
+  _cancelarUber() async {
+    final firebaseUser = await UsuarioFirebase.getUsuarioAtual();
+
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    db
+        .collection("requisicoes")
+        .doc(_idRequisicao)
+        .update({"status": StatusRequisicao.CANCELADA}).then((_) {
+      db.collection("requisicao_ativa").doc(firebaseUser.uid).delete();
+    });
+
+    //_idRequisicao = dados["id_requisicao"];
+  }
 
   _adicionarListenerRequisicaoAtiva() async {
     final firebaseUser = await UsuarioFirebase.getUsuarioAtual();
@@ -254,7 +268,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
         Map<String, dynamic>? dados =
             (snapshot.exists) ? snapshot.data() : null;
         String status = dados!["status"];
-        String idRequisicao = dados["id_requisicao"];
+        _idRequisicao = dados["id_requisicao"];
 
         switch (status) {
           case StatusRequisicao.AGUARDANDO:
