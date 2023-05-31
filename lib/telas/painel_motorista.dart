@@ -124,6 +124,10 @@ class _PainelMotoristaState extends State<PainelMotorista> {
                         return ListTile(
                           title: Text(nomePassageiro),
                           subtitle: Text("destino: $rua, $numero"),
+                          onTap: () {
+                            Navigator.pushNamed(context, "/corrida",
+                                arguments: idRequisicao);
+                          },
                         );
                       },
                     );

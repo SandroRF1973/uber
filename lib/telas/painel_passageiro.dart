@@ -71,13 +71,6 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
           target: LatLng(position.latitude, position.longitude), zoom: 19);
 
       _movimentarCamera(_posicaoCamera);
-
-      // setState(() {
-      //   _marcadores.add(marcadorUsuario);
-      //   _posicaoCamera = CameraPosition(
-      //       target: LatLng(position.latitude, position.longitude), zoom: 17);
-      //   _movimentarCamera();
-      // });
     });
   }
 
