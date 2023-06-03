@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:uber/model/usuario.dart';
+import 'package:uber/util/status_requisicao.dart';
+import 'package:uber/util/usuario_firebase.dart';
 
 class Corrida extends StatefulWidget {
   final String idRequisicao;
@@ -18,6 +22,8 @@ class _CorridaState extends State<Corrida> {
       const CameraPosition(target: LatLng(-23.563999, -46.653256));
 
   final Set<Marker> _marcadores = {};
+  late Map<String, dynamic> _dadosRequisicao;
+  late Position _localMotorista;
 
   //Controles para exibição na tela
   String _textoBotao = "Aceitar corrida";
@@ -47,6 +53,10 @@ class _CorridaState extends State<Corrida> {
           target: LatLng(position.latitude, position.longitude), zoom: 19);
 
       _movimentarCamera(_posicaoCamera);
+
+      setState(() {
+        _localMotorista = position;
+      });
     });
   }
 
@@ -61,6 +71,7 @@ class _CorridaState extends State<Corrida> {
             target: LatLng(position.latitude, position.longitude), zoom: 19);
 
         _movimentarCamera(_posicaoCamera);
+        _localMotorista = position;
       }
     });
   }
@@ -90,11 +101,77 @@ class _CorridaState extends State<Corrida> {
     });
   }
 
+  _recuperarRequisicao() async {
+    String idRequisicao = widget.idRequisicao;
+
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    DocumentSnapshot documentSnapshot =
+        await db.collection("requisicoes").doc(idRequisicao).get();
+
+    //_dadosRequisicao = documentSnapshot.data as Map<String, dynamic>;
+    if (documentSnapshot.exists) {
+      _dadosRequisicao = documentSnapshot.data() as Map<String, dynamic>;
+      _adicionarListenerRequisicao();
+    } else {
+      // Handle the case when the document doesn't exist
+    }
+  }
+
+  _adicionarListenerRequisicao() async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    String idRequisicao = _dadosRequisicao["id"];
+    await db
+        .collection("requisicoes")
+        .doc(idRequisicao)
+        .snapshots()
+        .listen((snapshot) {
+      // ignore: unnecessary_null_comparison
+      if (snapshot.data != null) {
+        //Map<String, dynamic> dados = snapshot.data as Map<String, dynamic>;
+        Map<String, dynamic> dados = snapshot.data() as Map<String, dynamic>;
+        String status = dados["status"];
+
+        switch (status) {
+          case StatusRequisicao.AGUARDANDO:
+            _statusAguardando();
+            break;
+          case StatusRequisicao.A_CAMINHO:
+            break;
+          case StatusRequisicao.VIAGEM:
+            break;
+          case StatusRequisicao.FINALIZADA:
+            break;
+        }
+      }
+    });
+  }
+
+  _statusAguardando() {
+    _alterarBotaoPrincipal(
+        "Aceitar Corrida", const Color(0xff1ebbd8), _aceitarCorrida);
+  }
+
+  _aceitarCorrida() async {
+    Usuario motorista = await UsuarioFirebase.getDadosUsuarioLogado();
+    motorista.latitude = _localMotorista.latitude;
+    motorista.longitude = _localMotorista.longitude;
+
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    String idRequisicao = _dadosRequisicao["id"];
+
+    db.collection("requisicoes").doc(idRequisicao).update({
+      "motorista": "",
+      "status": StatusRequisicao.A_CAMINHO,
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _recuperarUltimaLocalizacaoConhecida();
     _adicionarListenerLocalizacao();
+
+    _recuperarRequisicao();
   }
 
   @override
