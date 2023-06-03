@@ -14,7 +14,9 @@ class Usuario {
     Map<String, dynamic> map = {
       "nome": nome,
       "email": email,
-      "tipoUsuario": tipoUsuario
+      "tipoUsuario": tipoUsuario,
+      "latitude": latitude,
+      "longitude": longitude
     };
 
     return map;

@@ -136,6 +136,7 @@ class _CorridaState extends State<Corrida> {
             _statusAguardando();
             break;
           case StatusRequisicao.A_CAMINHO:
+            _statusACaminho();
             break;
           case StatusRequisicao.VIAGEM:
             break;
@@ -151,6 +152,10 @@ class _CorridaState extends State<Corrida> {
         "Aceitar Corrida", const Color(0xff1ebbd8), _aceitarCorrida);
   }
 
+  _statusACaminho() {
+    _alterarBotaoPrincipal("A caminho do passageiro", Colors.grey, () {});
+  }
+
   _aceitarCorrida() async {
     Usuario motorista = await UsuarioFirebase.getDadosUsuarioLogado();
     motorista.latitude = _localMotorista.latitude;
@@ -160,8 +165,23 @@ class _CorridaState extends State<Corrida> {
     String idRequisicao = _dadosRequisicao["id"];
 
     db.collection("requisicoes").doc(idRequisicao).update({
-      "motorista": "",
+      "motorista": motorista.toMap(),
       "status": StatusRequisicao.A_CAMINHO,
+    }).then((_) {
+      //atualiza requisição ativa
+      String idPassageiro = _dadosRequisicao["passageiro"]["idUsuario"];
+      db.collection("requisicao_ativa").doc(idPassageiro).update({
+        "motorista": motorista.toMap(),
+        "status": StatusRequisicao.A_CAMINHO,
+      });
+
+      //salvar requisição ativa para motorista
+      String idMotorista = motorista.idUsuario;
+      db.collection("requisicao_ativa_motorista").doc(idMotorista).set({
+        "id_requisicao": idRequisicao,
+        "idUsuario": idMotorista,
+        "status": StatusRequisicao.A_CAMINHO,
+      });
     });
   }
 
