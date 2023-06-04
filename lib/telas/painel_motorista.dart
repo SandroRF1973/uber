@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -61,13 +60,12 @@ class _PainelMotoristaState extends State<PainelMotorista> {
         .doc(firebaseUser.uid)
         .get();
 
-    var dadosRequisicao = documentSnapshot.data;
+    var dadosRequisicao = documentSnapshot.data();
 
-    // ignore: unnecessary_null_comparison
     if (dadosRequisicao == null) {
       _adicionarListenerRequisicoes();
     } else {
-      Map<String, dynamic> data = dadosRequisicao() as Map<String, dynamic>;
+      Map<String, dynamic> data = dadosRequisicao as Map<String, dynamic>;
       String idRequisicao = data["id_requisicao"];
       // ignore: use_build_context_synchronously
       Navigator.pushReplacementNamed(context, "/corrida",

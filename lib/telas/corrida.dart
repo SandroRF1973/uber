@@ -21,7 +21,7 @@ class _CorridaState extends State<Corrida> {
   CameraPosition _posicaoCamera =
       const CameraPosition(target: LatLng(-23.563999, -46.653256));
 
-  final Set<Marker> _marcadores = {};
+  Set<Marker> _marcadores = {};
   late Map<String, dynamic> _dadosRequisicao;
   late Position _localMotorista;
 
@@ -89,14 +89,14 @@ class _CorridaState extends State<Corrida> {
             ImageConfiguration(devicePixelRatio: pixelRatio),
             "imagens/motorista.png")
         .then((BitmapDescriptor icone) {
-      Marker marcadorMotorista = Marker(
+      Marker marcadorPassageiro = Marker(
           markerId: const MarkerId("marcador-motorista"),
           position: LatLng(local.latitude, local.longitude),
           infoWindow: const InfoWindow(title: "Meu local"),
           icon: icone);
 
       setState(() {
-        _marcadores.add(marcadorMotorista);
+        _marcadores.add(marcadorPassageiro);
       });
     });
   }
@@ -154,6 +154,52 @@ class _CorridaState extends State<Corrida> {
 
   _statusACaminho() {
     _alterarBotaoPrincipal("A caminho do passageiro", Colors.grey, () {});
+
+    double latitudePassageiro = _dadosRequisicao["passageiro"]["latitude"];
+    double longitudePassageiro = _dadosRequisicao["passageiro"]["longitude"];
+
+    double latitudeMotorista = _dadosRequisicao["motorista"]["latitude"];
+    double longitudeMotorista = _dadosRequisicao["motorista"]["longitude"];
+
+    _exibirDoisMarcadores(LatLng(latitudeMotorista, longitudeMotorista),
+        LatLng(latitudePassageiro, longitudePassageiro));
+  }
+
+  _exibirDoisMarcadores(LatLng latLngMotorista, LatLng latLngPassageiro) {
+    double pixelRatio = MediaQuery.of(context).devicePixelRatio;
+
+    Set<Marker> _listaMarcadores = {};
+    BitmapDescriptor.fromAssetImage(
+            ImageConfiguration(devicePixelRatio: pixelRatio),
+            "imagens/motorista.png")
+        .then((BitmapDescriptor icone) {
+      Marker marcador1 = Marker(
+          markerId: const MarkerId("marcador-motorista"),
+          position: LatLng(latLngMotorista.latitude, latLngMotorista.longitude),
+          infoWindow: const InfoWindow(title: "local motorista"),
+          icon: icone);
+      _listaMarcadores.add(marcador1);
+    });
+
+    BitmapDescriptor.fromAssetImage(
+            ImageConfiguration(devicePixelRatio: pixelRatio),
+            "imagens/passageiro.png")
+        .then((BitmapDescriptor icone) {
+      Marker marcador2 = Marker(
+          markerId: const MarkerId("marcador-passageiro"),
+          position:
+              LatLng(latLngPassageiro.latitude, latLngPassageiro.longitude),
+          infoWindow: const InfoWindow(title: "local passageiro"),
+          icon: icone);
+      _listaMarcadores.add(marcador2);
+    });
+
+    setState(() {
+      _marcadores = _listaMarcadores;
+      _movimentarCamera(CameraPosition(
+          target: LatLng(latLngMotorista.latitude, latLngMotorista.longitude),
+          zoom: 18));
+    });
   }
 
   _aceitarCorrida() async {
@@ -171,7 +217,6 @@ class _CorridaState extends State<Corrida> {
       //atualiza requisição ativa
       String idPassageiro = _dadosRequisicao["passageiro"]["idUsuario"];
       db.collection("requisicao_ativa").doc(idPassageiro).update({
-        "motorista": motorista.toMap(),
         "status": StatusRequisicao.A_CAMINHO,
       });
 

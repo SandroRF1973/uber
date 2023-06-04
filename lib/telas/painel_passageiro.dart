@@ -31,6 +31,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
   final Set<Marker> _marcadores = {};
 
   String? _idRequisicao;
+  late Position _localPassageiro;
 
   bool _exibirCaixaEnderecoDestino = true;
   String _textoBotao = "Chamar uber";
@@ -70,6 +71,8 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
       _posicaoCamera = CameraPosition(
           target: LatLng(position.latitude, position.longitude), zoom: 19);
 
+      _localPassageiro = position;
+
       _movimentarCamera(_posicaoCamera);
     });
   }
@@ -83,6 +86,8 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
         _posicaoCamera = CameraPosition(
             target: LatLng(position.latitude, position.longitude), zoom: 19);
+
+        _localPassageiro = position;
 
         _movimentarCamera(_posicaoCamera);
       }
@@ -191,6 +196,8 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     * */
 
     Usuario passageiro = (await UsuarioFirebase.getDadosUsuarioLogado());
+    passageiro.latitude = _localPassageiro.latitude;
+    passageiro.longitude = _localPassageiro.longitude;
 
     Requisicao requisicao = Requisicao();
     requisicao.destino = destino;
