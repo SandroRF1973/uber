@@ -52,7 +52,7 @@ class _CorridaState extends State<Corrida> {
       _posicaoCamera = CameraPosition(
           target: LatLng(position.latitude, position.longitude), zoom: 19);
 
-      _movimentarCamera(_posicaoCamera);
+      //_movimentarCamera(_posicaoCamera);
 
       setState(() {
         _localMotorista = position;
@@ -70,7 +70,7 @@ class _CorridaState extends State<Corrida> {
         _posicaoCamera = CameraPosition(
             target: LatLng(position.latitude, position.longitude), zoom: 19);
 
-        _movimentarCamera(_posicaoCamera);
+        // _movimentarCamera(_posicaoCamera);
         _localMotorista = position;
       }
     });
@@ -161,8 +161,36 @@ class _CorridaState extends State<Corrida> {
     double latitudeMotorista = _dadosRequisicao["motorista"]["latitude"];
     double longitudeMotorista = _dadosRequisicao["motorista"]["longitude"];
 
+    //Exibir dois marcadores
     _exibirDoisMarcadores(LatLng(latitudeMotorista, longitudeMotorista),
         LatLng(latitudePassageiro, longitudePassageiro));
+
+    var nLat, nLon, sLat, sLon;
+
+    if (latitudeMotorista <= latitudePassageiro) {
+      sLat = latitudeMotorista;
+      nLat = latitudePassageiro;
+    } else {
+      sLat = latitudePassageiro;
+      nLat = latitudeMotorista;
+    }
+
+    if (longitudeMotorista <= longitudePassageiro) {
+      sLon = longitudeMotorista;
+      nLon = longitudePassageiro;
+    } else {
+      sLon = longitudePassageiro;
+      nLon = longitudeMotorista;
+    }
+
+    _movimentarCameraBounds(LatLngBounds(
+        northeast: LatLng(nLat, nLon), southwest: LatLng(sLat, sLon)));
+  }
+
+  _movimentarCameraBounds(LatLngBounds latLngBounds) async {
+    GoogleMapController googleMapController = await _controller.future;
+    googleMapController
+        .animateCamera(CameraUpdate.newLatLngBounds(latLngBounds, 100));
   }
 
   _exibirDoisMarcadores(LatLng latLngMotorista, LatLng latLngPassageiro) {
@@ -179,6 +207,9 @@ class _CorridaState extends State<Corrida> {
           infoWindow: const InfoWindow(title: "local motorista"),
           icon: icone);
       _listaMarcadores.add(marcador1);
+      // ignore: avoid_print
+      print(
+          '==========Latitude Motorista: ${latLngMotorista.latitude} Longitude Motorista:  ${latLngMotorista.longitude}');
     });
 
     BitmapDescriptor.fromAssetImage(
@@ -192,13 +223,13 @@ class _CorridaState extends State<Corrida> {
           infoWindow: const InfoWindow(title: "local passageiro"),
           icon: icone);
       _listaMarcadores.add(marcador2);
+      // ignore: avoid_print
+      print(
+          '==========Latitude Passageiro: ${latLngPassageiro.latitude} Longitude Passageiro:  ${latLngPassageiro.longitude}');
     });
 
     setState(() {
       _marcadores = _listaMarcadores;
-      _movimentarCamera(CameraPosition(
-          target: LatLng(latLngMotorista.latitude, latLngMotorista.longitude),
-          zoom: 18));
     });
   }
 
