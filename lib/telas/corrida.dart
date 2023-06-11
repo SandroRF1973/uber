@@ -18,17 +18,17 @@ class Corrida extends StatefulWidget {
 
 class _CorridaState extends State<Corrida> {
   final Completer<GoogleMapController> _controller = Completer();
-  CameraPosition _posicaoCamera =
+  final CameraPosition _posicaoCamera =
       const CameraPosition(target: LatLng(-23.563999, -46.653256));
 
   Set<Marker> _marcadores = {};
   late Map<String, dynamic> _dadosRequisicao;
-  late Position _localMotorista;
 
   //Controles para exibição na tela
   String _textoBotao = "Aceitar corrida";
   Color _corBotao = const Color(0xff1ebbd8);
   late Function _funcaoBotao;
+  late String _mensageStatus;
 
   _alterarBotaoPrincipal(String texto, Color cor, Function funcao) {
     setState(() {
@@ -48,32 +48,16 @@ class _CorridaState extends State<Corrida> {
 
     Geolocator.getPositionStream(locationSettings: locationOptions)
         .listen((Position position) {
-      _exibirMarcadorPassageiro(position);
-      _posicaoCamera = CameraPosition(
-          target: LatLng(position.latitude, position.longitude), zoom: 19);
-
-      //_movimentarCamera(_posicaoCamera);
-
-      setState(() {
-        _localMotorista = position;
-      });
+      if (position != null) {}
     });
   }
 
   _recuperarUltimaLocalizacaoConhecida() async {
     Position? position = await Geolocator.getLastKnownPosition();
 
-    setState(() {
-      if (position != null) {
-        _exibirMarcadorPassageiro(position);
-
-        _posicaoCamera = CameraPosition(
-            target: LatLng(position.latitude, position.longitude), zoom: 19);
-
-        // _movimentarCamera(_posicaoCamera);
-        _localMotorista = position;
-      }
-    });
+    if (position != null) {
+      //Atualizar localização atual do motorista
+    }
   }
 
   _movimentarCamera(CameraPosition cameraPosition) async {
@@ -82,21 +66,20 @@ class _CorridaState extends State<Corrida> {
         .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
   }
 
-  _exibirMarcadorPassageiro(Position local) async {
+  _exibirMarcador(Position local, String icone, String infoWindow) async {
     double pixelRatio = MediaQuery.of(context).devicePixelRatio;
 
     BitmapDescriptor.fromAssetImage(
-            ImageConfiguration(devicePixelRatio: pixelRatio),
-            "imagens/motorista.png")
-        .then((BitmapDescriptor icone) {
-      Marker marcadorPassageiro = Marker(
-          markerId: const MarkerId("marcador-motorista"),
+            ImageConfiguration(devicePixelRatio: pixelRatio), icone)
+        .then((BitmapDescriptor bitmapDescriptor) {
+      Marker marcador = Marker(
+          markerId: MarkerId(icone),
           position: LatLng(local.latitude, local.longitude),
-          infoWindow: const InfoWindow(title: "Meu local"),
-          icon: icone);
+          infoWindow: InfoWindow(title: infoWindow),
+          icon: bitmapDescriptor);
 
       setState(() {
-        _marcadores.add(marcadorPassageiro);
+        _marcadores.add(marcador);
       });
     });
   }
@@ -110,8 +93,6 @@ class _CorridaState extends State<Corrida> {
 
     //_dadosRequisicao = documentSnapshot.data as Map<String, dynamic>;
     if (documentSnapshot.exists) {
-      _dadosRequisicao = documentSnapshot.data() as Map<String, dynamic>;
-      _adicionarListenerRequisicao();
     } else {
       // Handle the case when the document doesn't exist
     }
@@ -127,6 +108,7 @@ class _CorridaState extends State<Corrida> {
         .listen((snapshot) {
       // ignore: unnecessary_null_comparison
       if (snapshot.data != null) {
+        _dadosRequisicao = snapshot.data() as Map<String, dynamic>;
         //Map<String, dynamic> dados = snapshot.data as Map<String, dynamic>;
         Map<String, dynamic> dados = snapshot.data() as Map<String, dynamic>;
         String status = dados["status"];
@@ -150,10 +132,31 @@ class _CorridaState extends State<Corrida> {
   _statusAguardando() {
     _alterarBotaoPrincipal(
         "Aceitar Corrida", const Color(0xff1ebbd8), _aceitarCorrida);
+
+    double motoristaLat = _dadosRequisicao["motorista"]["latitude"];
+    double motoristaLon = _dadosRequisicao["motorista"]["longitude"];
+
+    Position position = Position(
+        longitude: motoristaLon,
+        latitude: motoristaLat,
+        accuracy: 0,
+        altitude: 0,
+        heading: 0,
+        speed: 0,
+        speedAccuracy: 0,
+        timestamp: null);
+
+    _exibirMarcador(position, "imagens/motorista.png", "Motorista");
+    CameraPosition cameraPosition = CameraPosition(
+        target: LatLng(position.latitude, position.longitude), zoom: 19);
+
+    _movimentarCamera(cameraPosition);
   }
 
   _statusACaminho() {
-    _alterarBotaoPrincipal("A caminho do passageiro", Colors.grey, () {});
+    _mensageStatus = "A caminho do passageiro";
+    _alterarBotaoPrincipal(
+        "Iniciar corrida", const Color(0xff1ebbd8), _iniciarCorrida);
 
     double latitudePassageiro = _dadosRequisicao["passageiro"]["latitude"];
     double longitudePassageiro = _dadosRequisicao["passageiro"]["longitude"];
@@ -186,6 +189,8 @@ class _CorridaState extends State<Corrida> {
     _movimentarCameraBounds(LatLngBounds(
         northeast: LatLng(nLat, nLon), southwest: LatLng(sLat, sLon)));
   }
+
+  _iniciarCorrida() {}
 
   _movimentarCameraBounds(LatLngBounds latLngBounds) async {
     GoogleMapController googleMapController = await _controller.future;
@@ -235,8 +240,8 @@ class _CorridaState extends State<Corrida> {
 
   _aceitarCorrida() async {
     Usuario motorista = await UsuarioFirebase.getDadosUsuarioLogado();
-    motorista.latitude = _localMotorista.latitude;
-    motorista.longitude = _localMotorista.longitude;
+    motorista.latitude = _dadosRequisicao["motorista"]["latitude"];
+    motorista.longitude = _dadosRequisicao["motorista"]["longitude"];
 
     FirebaseFirestore db = FirebaseFirestore.instance;
     String idRequisicao = _dadosRequisicao["id"];
@@ -264,17 +269,18 @@ class _CorridaState extends State<Corrida> {
   @override
   void initState() {
     super.initState();
-    _recuperarUltimaLocalizacaoConhecida();
-    _adicionarListenerLocalizacao();
+    //adicionar listener para mudanças na requisição
+    _adicionarListenerRequisicao();
 
-    _recuperarRequisicao();
+    //_recuperarUltimaLocalizacaoConhecida();
+    _adicionarListenerLocalizacao();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Painel corrida"),
+        title: Text("Painel corrida - $_mensageStatus"),
       ),
       body: Stack(
         children: [

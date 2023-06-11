@@ -67,13 +67,11 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
     Geolocator.getPositionStream(locationSettings: locationOptions)
         .listen((Position position) {
-      _exibirMarcadorPassageiro(position);
-      _posicaoCamera = CameraPosition(
-          target: LatLng(position.latitude, position.longitude), zoom: 19);
-
-      _localPassageiro = position;
-
-      _movimentarCamera(_posicaoCamera);
+      if (position != null) {
+        setState(() {
+          _localPassageiro = position;
+        });
+      }
     });
   }
 
@@ -81,16 +79,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     Position? position = await Geolocator.getLastKnownPosition();
 
     setState(() {
-      if (position != null) {
-        _exibirMarcadorPassageiro(position);
-
-        _posicaoCamera = CameraPosition(
-            target: LatLng(position.latitude, position.longitude), zoom: 19);
-
-        _localPassageiro = position;
-
-        _movimentarCamera(_posicaoCamera);
-      }
+      if (position != null) {}
     });
   }
 
@@ -232,6 +221,22 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     _exibirCaixaEnderecoDestino = true;
 
     _alterarBotaoPrincipal("Chamar uber", const Color(0xff1ebbd8), _chamarUber);
+
+    Position position = Position(
+        latitude: _localPassageiro.latitude,
+        longitude: _localPassageiro.longitude,
+        timestamp: null,
+        accuracy: 0,
+        altitude: 0,
+        heading: 0,
+        speed: 0,
+        speedAccuracy: 0);
+
+    _exibirMarcadorPassageiro(position);
+    CameraPosition cameraPosition = CameraPosition(
+        target: LatLng(position.latitude, position.longitude), zoom: 19);
+
+    _movimentarCamera(cameraPosition);
   }
 
   _statusAguardando() {
@@ -260,14 +265,31 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     //_idRequisicao = dados["id_requisicao"];
   }
 
-  _adicionarListenerRequisicaoAtiva() async {
+  _recuperarRequisicaoAtiva() async {
     final firebaseUser = await UsuarioFirebase.getUsuarioAtual();
 
     FirebaseFirestore db = FirebaseFirestore.instance;
     // ignore: await_only_futures
+    DocumentSnapshot documentSnapshot =
+        await db.collection("requisicao_ativa").doc(firebaseUser.uid).get();
+
+    // ignore: unnecessary_null_comparison
+    if (documentSnapshot.data != null) {
+      Map<String, dynamic> dados =
+          documentSnapshot.data() as Map<String, dynamic>;
+      _idRequisicao = dados["id_requisicao"];
+      _adicionarListenerRequisicao(_idRequisicao!);
+    } else {
+      _statusUberNaoChamado();
+    }
+  }
+
+  _adicionarListenerRequisicao(String idRequisicao) async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    // ignore: await_only_futures
     await db
-        .collection("requisicao_ativa")
-        .doc(firebaseUser.uid)
+        .collection("requisicoes")
+        .doc(idRequisicao)
         .snapshots()
         .listen((snapshot) {
       if (snapshot.exists) {
@@ -288,8 +310,6 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
           case StatusRequisicao.FINALIZADA:
             break;
         }
-      } else {
-        _statusUberNaoChamado();
       }
     });
   }
@@ -297,9 +317,10 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
   @override
   void initState() {
     super.initState();
-    _recuperarUltimaLocalizacaoConhecida();
+    _recuperarRequisicaoAtiva();
+
+    //_recuperarUltimaLocalizacaoConhecida();
     _adicionarListenerLocalizacao();
-    _adicionarListenerRequisicaoAtiva();
   }
 
   @override
