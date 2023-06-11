@@ -48,6 +48,7 @@ class _CorridaState extends State<Corrida> {
 
     Geolocator.getPositionStream(locationSettings: locationOptions)
         .listen((Position position) {
+      // ignore: unnecessary_null_comparison
       if (position != null) {}
     });
   }
