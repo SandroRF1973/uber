@@ -67,7 +67,13 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
     Geolocator.getPositionStream(locationSettings: locationOptions)
         .listen((Position position) {
-      if (position != null) {
+      if (_idRequisicao != null && _idRequisicao!.isNotEmpty) {
+        //Atualiza local do passageiro
+        UsuarioFirebase.atualizarDadosLocalizacao(
+            _idRequisicao!, position.latitude, position.longitude);
+
+        // ignore: unnecessary_null_comparison
+      } else if (position != null) {
         setState(() {
           _localPassageiro = position;
         });
