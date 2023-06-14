@@ -32,6 +32,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
 
   String? _idRequisicao;
   late Position _localPassageiro;
+  late Map<String, dynamic> _dadosRequisicao;
 
   bool _exibirCaixaEnderecoDestino = true;
   String _textoBotao = "Chamar uber";
@@ -213,6 +214,9 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
         .collection("requisicao_ativa")
         .doc(passageiro.idUsuario)
         .set(dadosRequisicaoAtiva);
+
+    //chama método para alterar interface para o status aguardando
+    _statusAguardando();
   }
 
   _alterarBotaoPrincipal(String texto, Color cor, Function funcao) {
@@ -249,6 +253,25 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     _exibirCaixaEnderecoDestino = false;
 
     _alterarBotaoPrincipal("Cancelar", Colors.red, _cancelarUber);
+
+    double passageiroLat = _dadosRequisicao["passageiro"]["latitude"];
+    double passageiroLon = _dadosRequisicao["passageiro"]["longitude"];
+
+    Position position = Position(
+        latitude: _localPassageiro.latitude,
+        longitude: _localPassageiro.longitude,
+        timestamp: null,
+        accuracy: 0,
+        altitude: 0,
+        heading: 0,
+        speed: 0,
+        speedAccuracy: 0);
+
+    _exibirMarcadorPassageiro(position);
+    CameraPosition cameraPosition =
+        CameraPosition(target: LatLng(passageiroLat, passageiroLon), zoom: 19);
+
+    _movimentarCamera(cameraPosition);
   }
 
   _statusACaminho() {
@@ -283,6 +306,7 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     if (documentSnapshot.data != null) {
       Map<String, dynamic> dados =
           documentSnapshot.data() as Map<String, dynamic>;
+      _dadosRequisicao = dados;
       _idRequisicao = dados["id_requisicao"];
       _adicionarListenerRequisicao(_idRequisicao!);
     } else {
