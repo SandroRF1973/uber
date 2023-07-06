@@ -69,14 +69,6 @@ class _CorridaState extends State<Corrida> {
     });
   }
 
-  _recuperarUltimaLocalizacaoConhecida() async {
-    Position? position = await Geolocator.getLastKnownPosition();
-
-    if (position != null) {
-      //Atualizar localização atual do motorista
-    }
-  }
-
   _movimentarCamera(CameraPosition cameraPosition) async {
     GoogleMapController googleMapController = await _controller.future;
     googleMapController
@@ -203,7 +195,7 @@ class _CorridaState extends State<Corrida> {
   _exibirDoisMarcadores(LatLng latLngMotorista, LatLng latLngPassageiro) {
     double pixelRatio = MediaQuery.of(context).devicePixelRatio;
 
-    Set<Marker> _listaMarcadores = {};
+    Set<Marker> listaMarcadores = {};
     BitmapDescriptor.fromAssetImage(
             ImageConfiguration(devicePixelRatio: pixelRatio),
             "imagens/motorista.png")
@@ -213,7 +205,7 @@ class _CorridaState extends State<Corrida> {
           position: LatLng(latLngMotorista.latitude, latLngMotorista.longitude),
           infoWindow: const InfoWindow(title: "local motorista"),
           icon: icone);
-      _listaMarcadores.add(marcador1);
+      listaMarcadores.add(marcador1);
       // ignore: avoid_print
       print(
           '==========Latitude Motorista: ${latLngMotorista.latitude} Longitude Motorista:  ${latLngMotorista.longitude}');
@@ -229,14 +221,14 @@ class _CorridaState extends State<Corrida> {
               LatLng(latLngPassageiro.latitude, latLngPassageiro.longitude),
           infoWindow: const InfoWindow(title: "local passageiro"),
           icon: icone);
-      _listaMarcadores.add(marcador2);
+      listaMarcadores.add(marcador2);
       // ignore: avoid_print
       print(
           '==========Latitude Passageiro: ${latLngPassageiro.latitude} Longitude Passageiro:  ${latLngPassageiro.longitude}');
     });
 
     setState(() {
-      _marcadores = _listaMarcadores;
+      _marcadores = listaMarcadores;
     });
   }
 
