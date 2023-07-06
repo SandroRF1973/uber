@@ -23,12 +23,15 @@ class _CorridaState extends State<Corrida> {
 
   Set<Marker> _marcadores = {};
   late Map<String, dynamic> _dadosRequisicao;
+  String _idRequisicao = "";
+  late Position _localMotorista;
+  String _statusRequisicao = StatusRequisicao.AGUARDANDO;
 
   //Controles para exibição na tela
   String _textoBotao = "Aceitar corrida";
   Color _corBotao = const Color(0xff1ebbd8);
   late Function _funcaoBotao;
-  late String _mensageStatus;
+  String _mensageStatus = "";
 
   _alterarBotaoPrincipal(String texto, Color cor, Function funcao) {
     setState(() {
@@ -49,7 +52,20 @@ class _CorridaState extends State<Corrida> {
     Geolocator.getPositionStream(locationSettings: locationOptions)
         .listen((Position position) {
       // ignore: unnecessary_null_comparison
-      if (position != null) {}
+      if (position != null) {
+        if (_statusRequisicao != StatusRequisicao.AGUARDANDO) {
+          // ignore: unnecessary_null_comparison
+          if (_idRequisicao != null && _idRequisicao.isNotEmpty) {
+            UsuarioFirebase.atualizarDadosLocalizacao(
+                _idRequisicao, position.latitude, position.longitude);
+          }
+          // ignore: unnecessary_null_comparison
+        } else if (position != null) {
+          setState(() {
+            _localMotorista = position;
+          });
+        }
+      }
     });
   }
 
@@ -101,10 +117,9 @@ class _CorridaState extends State<Corrida> {
 
   _adicionarListenerRequisicao() async {
     FirebaseFirestore db = FirebaseFirestore.instance;
-    String idRequisicao = _dadosRequisicao["id"];
-    await db
+    db
         .collection("requisicoes")
-        .doc(idRequisicao)
+        .doc(_idRequisicao)
         .snapshots()
         .listen((snapshot) {
       // ignore: unnecessary_null_comparison
@@ -112,9 +127,9 @@ class _CorridaState extends State<Corrida> {
         _dadosRequisicao = snapshot.data() as Map<String, dynamic>;
         //Map<String, dynamic> dados = snapshot.data as Map<String, dynamic>;
         Map<String, dynamic> dados = snapshot.data() as Map<String, dynamic>;
-        String status = dados["status"];
+        _statusRequisicao = dados["status"];
 
-        switch (status) {
+        switch (_statusRequisicao) {
           case StatusRequisicao.AGUARDANDO:
             _statusAguardando();
             break;
@@ -134,8 +149,8 @@ class _CorridaState extends State<Corrida> {
     _alterarBotaoPrincipal(
         "Aceitar Corrida", const Color(0xff1ebbd8), _aceitarCorrida);
 
-    double motoristaLat = _dadosRequisicao["motorista"]["latitude"];
-    double motoristaLon = _dadosRequisicao["motorista"]["longitude"];
+    double motoristaLat = _localMotorista.latitude;
+    double motoristaLon = _localMotorista.longitude;
 
     Position position = Position(
         longitude: motoristaLon,
@@ -270,6 +285,9 @@ class _CorridaState extends State<Corrida> {
   @override
   void initState() {
     super.initState();
+
+    _idRequisicao = widget.idRequisicao;
+
     //adicionar listener para mudanças na requisição
     _adicionarListenerRequisicao();
 
