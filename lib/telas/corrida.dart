@@ -101,20 +101,6 @@ class _CorridaState extends State<Corrida> {
     });
   }
 
-  _recuperarRequisicao() async {
-    String idRequisicao = widget.idRequisicao;
-
-    FirebaseFirestore db = FirebaseFirestore.instance;
-    DocumentSnapshot documentSnapshot =
-        await db.collection("requisicoes").doc(idRequisicao).get();
-
-    //_dadosRequisicao = documentSnapshot.data as Map<String, dynamic>;
-    if (documentSnapshot.exists) {
-    } else {
-      // Handle the case when the document doesn't exist
-    }
-  }
-
   _adicionarListenerRequisicao() async {
     FirebaseFirestore db = FirebaseFirestore.instance;
     db
@@ -184,7 +170,7 @@ class _CorridaState extends State<Corrida> {
     _exibirDoisMarcadores(LatLng(latitudeMotorista, longitudeMotorista),
         LatLng(latitudePassageiro, longitudePassageiro));
 
-    var nLat, nLon, sLat, sLon;
+    double nLat, nLon, sLat, sLon;
 
     if (latitudeMotorista <= latitudePassageiro) {
       sLat = latitudeMotorista;

@@ -25,10 +25,10 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
   List<String> itensMenu = ["Configurações", "Deslogar"];
 
   final Completer<GoogleMapController> _controller = Completer();
-  CameraPosition _posicaoCamera =
+  final CameraPosition _posicaoCamera =
       const CameraPosition(target: LatLng(-23.563999, -46.653256));
 
-  final Set<Marker> _marcadores = {};
+  Set<Marker> _marcadores = {};
 
   String? _idRequisicao;
   late Position _localPassageiro;
@@ -79,14 +79,6 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
           _localPassageiro = position;
         });
       }
-    });
-  }
-
-  _recuperarUltimaLocalizacaoConhecida() async {
-    Position? position = await Geolocator.getLastKnownPosition();
-
-    setState(() {
-      if (position != null) {}
     });
   }
 
@@ -274,10 +266,87 @@ class _PainelPassageiroState extends State<PainelPassageiro> {
     _movimentarCamera(cameraPosition);
   }
 
+  _exibirDoisMarcadores(LatLng latLngMotorista, LatLng latLngPassageiro) {
+    double pixelRatio = MediaQuery.of(context).devicePixelRatio;
+
+    Set<Marker> listaMarcadores = {};
+    BitmapDescriptor.fromAssetImage(
+            ImageConfiguration(devicePixelRatio: pixelRatio),
+            "imagens/motorista.png")
+        .then((BitmapDescriptor icone) {
+      Marker marcador1 = Marker(
+          markerId: const MarkerId("marcador-motorista"),
+          position: LatLng(latLngMotorista.latitude, latLngMotorista.longitude),
+          infoWindow: const InfoWindow(title: "local motorista"),
+          icon: icone);
+      listaMarcadores.add(marcador1);
+      // ignore: avoid_print
+      print(
+          '==========Latitude Motorista: ${latLngMotorista.latitude} Longitude Motorista:  ${latLngMotorista.longitude}');
+    });
+
+    BitmapDescriptor.fromAssetImage(
+            ImageConfiguration(devicePixelRatio: pixelRatio),
+            "imagens/passageiro.png")
+        .then((BitmapDescriptor icone) {
+      Marker marcador2 = Marker(
+          markerId: const MarkerId("marcador-passageiro"),
+          position:
+              LatLng(latLngPassageiro.latitude, latLngPassageiro.longitude),
+          infoWindow: const InfoWindow(title: "local passageiro"),
+          icon: icone);
+      listaMarcadores.add(marcador2);
+      // ignore: avoid_print
+      print(
+          '==========Latitude Passageiro: ${latLngPassageiro.latitude} Longitude Passageiro:  ${latLngPassageiro.longitude}');
+    });
+
+    setState(() {
+      _marcadores = listaMarcadores;
+    });
+  }
+
   _statusACaminho() {
     _exibirCaixaEnderecoDestino = false;
 
     _alterarBotaoPrincipal("Motorista a caminho", Colors.grey, () {});
+
+    double latitudePassageiro = _dadosRequisicao["passageiro"]["latitude"];
+    double longitudePassageiro = _dadosRequisicao["passageiro"]["longitude"];
+
+    double latitudeMotorista = _dadosRequisicao["motorista"]["latitude"];
+    double longitudeMotorista = _dadosRequisicao["motorista"]["longitude"];
+
+    //Exibir dois marcadores
+    _exibirDoisMarcadores(LatLng(latitudeMotorista, longitudeMotorista),
+        LatLng(latitudePassageiro, longitudePassageiro));
+
+    double nLat, nLon, sLat, sLon;
+
+    if (latitudeMotorista <= latitudePassageiro) {
+      sLat = latitudeMotorista;
+      nLat = latitudePassageiro;
+    } else {
+      sLat = latitudePassageiro;
+      nLat = latitudeMotorista;
+    }
+
+    if (longitudeMotorista <= longitudePassageiro) {
+      sLon = longitudeMotorista;
+      nLon = longitudePassageiro;
+    } else {
+      sLon = longitudePassageiro;
+      nLon = longitudeMotorista;
+    }
+
+    _movimentarCameraBounds(LatLngBounds(
+        northeast: LatLng(nLat, nLon), southwest: LatLng(sLat, sLon)));
+  }
+
+  _movimentarCameraBounds(LatLngBounds latLngBounds) async {
+    GoogleMapController googleMapController = await _controller.future;
+    googleMapController
+        .animateCamera(CameraUpdate.newLatLngBounds(latLngBounds, 100));
   }
 
   _cancelarUber() async {
