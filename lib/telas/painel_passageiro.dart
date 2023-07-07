@@ -10,7 +10,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:uber/model/requisicao.dart';
 import 'package:uber/model/usuario.dart';
 import 'package:uber/util/status_requisicao.dart';
-import '../util/usuario_firebase.dart';
+import 'package:uber/util/usuario_firebase.dart';
 
 class PainelPassageiro extends StatefulWidget {
   const PainelPassageiro({super.key});
