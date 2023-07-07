@@ -116,6 +116,7 @@ class _CorridaState extends State<Corrida> {
             _statusACaminho();
             break;
           case StatusRequisicao.VIAGEM:
+            _statusEmViagem();
             break;
           case StatusRequisicao.FINALIZADA:
             break;
@@ -182,6 +183,45 @@ class _CorridaState extends State<Corrida> {
     } else {
       sLon = longitudePassageiro;
       nLon = longitudeMotorista;
+    }
+
+    _movimentarCameraBounds(LatLngBounds(
+        northeast: LatLng(nLat, nLon), southwest: LatLng(sLat, sLon)));
+  }
+
+  _finalizarCorrida() {}
+
+  _statusEmViagem() {
+    _mensageStatus = "Em viagem";
+    _alterarBotaoPrincipal(
+        "Finalizar corrida", const Color(0xff1ebbd8), _finalizarCorrida);
+
+    double latitudeDestino = _dadosRequisicao["destino"]["latitude"];
+    double longitudeDestino = _dadosRequisicao["destino"]["longitude"];
+
+    double latitudeOrigem = _dadosRequisicao["motorista"]["latitude"];
+    double longitudeOrigem = _dadosRequisicao["motorista"]["longitude"];
+
+    //Exibir dois marcadores
+    _exibirDoisMarcadores(LatLng(latitudeOrigem, longitudeOrigem),
+        LatLng(latitudeDestino, longitudeDestino));
+
+    double nLat, nLon, sLat, sLon;
+
+    if (latitudeOrigem <= latitudeDestino) {
+      sLat = latitudeOrigem;
+      nLat = latitudeDestino;
+    } else {
+      sLat = latitudeDestino;
+      nLat = latitudeOrigem;
+    }
+
+    if (longitudeOrigem <= longitudeDestino) {
+      sLon = longitudeOrigem;
+      nLon = longitudeDestino;
+    } else {
+      sLon = longitudeDestino;
+      nLon = longitudeOrigem;
     }
 
     _movimentarCameraBounds(LatLngBounds(
@@ -259,8 +299,8 @@ class _CorridaState extends State<Corrida> {
 
   _aceitarCorrida() async {
     Usuario motorista = await UsuarioFirebase.getDadosUsuarioLogado();
-    motorista.latitude = _dadosRequisicao["motorista"]["latitude"];
-    motorista.longitude = _dadosRequisicao["motorista"]["longitude"];
+    motorista.latitude = _localMotorista.latitude;
+    motorista.longitude = _localMotorista.longitude;
 
     FirebaseFirestore db = FirebaseFirestore.instance;
     String idRequisicao = _dadosRequisicao["id"];
