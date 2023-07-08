@@ -32,16 +32,17 @@ class UsuarioFirebase {
   }
 
   static atualizarDadosLocalizacao(
-      String idRequisicao, double lat, double lon) async {
+      String idRequisicao, double lat, double lon, String tipo) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
 
-    Usuario motorista = await getDadosUsuarioLogado();
-    motorista.latitude = lat;
-    motorista.longitude = lon;
+    Usuario usuario = await getDadosUsuarioLogado();
+    usuario.latitude = lat;
+    usuario.longitude = lon;
 
     db
         .collection("requisicoes")
         .doc(idRequisicao)
-        .update({"motorista": motorista.toMap()});
+        // ignore: unnecessary_string_interpolations
+        .update({"$tipo": usuario.toMap()});
   }
 }

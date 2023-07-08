@@ -57,8 +57,8 @@ class _CorridaState extends State<Corrida> {
         // ignore: unnecessary_null_comparison
         if (_idRequisicao != null && _idRequisicao.isNotEmpty) {
           if (_statusRequisicao != StatusRequisicao.AGUARDANDO) {
-            UsuarioFirebase.atualizarDadosLocalizacao(
-                _idRequisicao, position.latitude, position.longitude);
+            UsuarioFirebase.atualizarDadosLocalizacao(_idRequisicao,
+                position.latitude, position.longitude, "motorista");
           } else {
             //aguardando
             setState(() {
@@ -121,6 +121,9 @@ class _CorridaState extends State<Corrida> {
             break;
           case StatusRequisicao.FINALIZADA:
             _statusFinalizada();
+            break;
+          case StatusRequisicao.CONFIRMADA:
+            _statusConfirmada();
             break;
         }
       }
@@ -235,9 +238,41 @@ class _CorridaState extends State<Corrida> {
     _mensageStatus = "Viagem finalizada";
     _alterarBotaoPrincipal("Confirmar - R\$ $valorViagemFormatado",
         const Color(0xff1ebbd8), _confirmarCorrida);
+
+    Position position = Position(
+        longitude: longitudeDestino,
+        latitude: latitudeDestino,
+        accuracy: 0,
+        altitude: 0,
+        heading: 0,
+        speed: 0,
+        speedAccuracy: 0,
+        timestamp: null);
+
+    _exibirMarcador(position, "imagens/destino.png", "Destino");
+    CameraPosition cameraPosition = CameraPosition(
+        target: LatLng(position.latitude, position.longitude), zoom: 19);
+
+    _movimentarCamera(cameraPosition);
   }
 
-  _confirmarCorrida() {}
+  _statusConfirmada() {
+    Navigator.pushReplacementNamed(context, "/painel-motorista");
+  }
+
+  _confirmarCorrida() {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    db
+        .collection("requisicoes")
+        .doc(_idRequisicao)
+        .update({"status": StatusRequisicao.CONFIRMADA});
+
+    String idPassageiro = _dadosRequisicao["passageiro"]["idUsuario"];
+    db.collection("requisicao_ativa").doc(idPassageiro).delete();
+
+    String idMotorista = _dadosRequisicao["motorista"]["idUsuario"];
+    db.collection("requisicao_ativa_motorista").doc(idMotorista).delete();
+  }
 
   _statusEmViagem() {
     _mensageStatus = "Em viagem";
